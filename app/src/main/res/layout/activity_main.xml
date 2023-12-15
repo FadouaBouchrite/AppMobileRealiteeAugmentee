@@ -13,6 +13,4 @@
         android:id="@+id/camera_button"
         android:text="Object"
         />
-
-
 </LinearLayout>

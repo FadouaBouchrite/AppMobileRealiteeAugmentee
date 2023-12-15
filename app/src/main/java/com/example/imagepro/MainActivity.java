@@ -10,14 +10,14 @@ import android.widget.Button;
 
 import org.opencv.android.OpenCVLoader;
 
+
 public class MainActivity extends AppCompatActivity {
-    static {
-        if(OpenCVLoader.initDebug()){
-            Log.d("MainActivity: ","Opencv is loaded");
-        }
-        else {
-            Log.d("MainActivity: ","Opencv failed to load");
-        }
+    static {    if(OpenCVLoader.initDebug()){
+        Log.d("MainActivity: ","Opencv is loaded");
+    }
+    else {
+        Log.d("MainActivity: ","Opencv failed to load");
+    }
     }
 
     private Button camera_button;

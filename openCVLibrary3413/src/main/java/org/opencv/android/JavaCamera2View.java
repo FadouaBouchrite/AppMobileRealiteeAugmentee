@@ -63,6 +63,11 @@ public class JavaCamera2View extends CameraBridgeViewBase {
         super(context, attrs);
     }
 
+    @Override
+    public void setCameraPermissionGranted() {
+
+    }
+
     private void startBackgroundThread() {
         Log.i(LOGTAG, "startBackgroundThread");
         stopBackgroundThread();
