@@ -1,12 +1,12 @@
 package com.example.imagepro;
+
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.widget.ImageView;
 import androidx.appcompat.app.AppCompatActivity;
-import org.opencv.android.Utils;
-import org.opencv.core.Mat;
 
-public class   MainActivity2 extends AppCompatActivity {
+public class MainActivity2 extends AppCompatActivity {
     private ImageView imageView;
 
     @Override
@@ -16,13 +16,12 @@ public class   MainActivity2 extends AppCompatActivity {
 
         imageView = findViewById(R.id.imageView);
 
-        // Retrieve the captured image data from the intent
-        Mat capturedImage = (Mat) getIntent().getSerializableExtra("capturedImage");
+        // Retrieve the captured image path from the intent
+        String capturedImagePath = getIntent().getStringExtra("capturedImagePath");
 
         // Display the image in an ImageView or process it as needed
-        if (capturedImage != null) {
-            Bitmap bitmap = Bitmap.createBitmap(capturedImage.cols(), capturedImage.rows(), Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(capturedImage, bitmap);
+        if (capturedImagePath != null) {
+            Bitmap bitmap = BitmapFactory.decodeFile(capturedImagePath);
             imageView.setImageBitmap(bitmap);
         }
     }

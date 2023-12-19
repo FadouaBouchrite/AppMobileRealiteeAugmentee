@@ -1,32 +1,42 @@
 package com.example.imagepro;
 
-
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
-import android.view.SurfaceView;
 import android.widget.Toast;
+
 import androidx.core.app.ActivityCompat;
+
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.imgcodecs.Imgcodecs;
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class CameraActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
     private static final String TAG = "CameraActivity";
     private static final int PERMISSION_REQUEST_CODE = 1;
-    private static final long CAPTURE_INTERVAL_MS = 5000; // 5 seconds
+    private static final long CAPTURE_DELAY_MS = 5000;
 
     private Mat mRgba;
     private Mat mGray;
@@ -34,19 +44,16 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     private BaseLoaderCallback mLoaderCallback;
     private Handler captureHandler;
     private Runnable captureRunnable;
-    private Mat capturedImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
-        // Request camera permission
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.CAMERA},
                 PERMISSION_REQUEST_CODE);
 
-        // Initialize OpenCV
         mLoaderCallback = new BaseLoaderCallback(this) {
             @Override
             public void onManagerConnected(int status) {
@@ -63,15 +70,11 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
             }
         };
 
-        // Initialize the capture handler and runnable
         captureHandler = new Handler();
         captureRunnable = new Runnable() {
             @Override
             public void run() {
                 captureImage();
-                showToast("Image captured!");
-                // Schedule the next capture after the specified interval
-                captureHandler.postDelayed(this, CAPTURE_INTERVAL_MS);
             }
         };
     }
@@ -89,7 +92,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
     private void initializeCamera() {
         mOpenCvCameraView = findViewById(R.id.frame_Surface);
-        mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
+        mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
         mOpenCvCameraView.setCameraPermissionGranted();
         mOpenCvCameraView.setCvCameraViewListener(this);
     }
@@ -105,8 +108,8 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0, this, mLoaderCallback);
         }
 
-        // Start capturing images every 5 seconds
-        captureHandler.postDelayed(captureRunnable, CAPTURE_INTERVAL_MS);
+        // Attendre 5 secondes avant de capturer l'image
+        captureHandler.postDelayed(captureRunnable, CAPTURE_DELAY_MS);
     }
 
     @Override
@@ -115,8 +118,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         if (mOpenCvCameraView != null) {
             mOpenCvCameraView.disableView();
         }
-
-        // Stop capturing when the activity is paused
+        // Arrêter la capture programmée lors de la mise en pause de l'activité
         captureHandler.removeCallbacks(captureRunnable);
     }
 
@@ -149,32 +151,70 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     }
 
     private void captureImage() {
-        // Copy the current frame to the capturedImage Mat
-        capturedImage = new Mat();
-        mRgba.copyTo(capturedImage);
+        showToast("Image captured!");
 
-        // Save the captured image to a file (optional)
-        saveImageToFile(capturedImage);
+        // Convertir la matrice OpenCV en un tableau de bytes
+        byte[] imageData = convertMatToByteArray(mRgba);
+
+        // Envoi de l'image au backend Flask
+        new UploadImageTask().execute(imageData);
     }
 
-    private void saveImageToFile(Mat image) {
-        // Create a directory for storing images
-        File storageDir = new File(Environment.getExternalStorageDirectory(), "CapturedImages");
-        if (!storageDir.exists()) {
-            storageDir.mkdir();
+    private class UploadImageTask extends AsyncTask<byte[], Void, String> {
+        @Override
+        protected String doInBackground(byte[]... imageBytes) {
+            try {
+                // URL du backend Flask
+                String backendUrl = "http://192.168.43.112:5000/upload";
+
+                // Créer la demande multipart avec l'image
+                RequestBody requestBody = new MultipartBody.Builder()
+                        .setType(MultipartBody.FORM)
+                        .addFormDataPart("image", "image.jpg", RequestBody.create(MediaType.parse("image/*"), imageBytes[0]))
+                        .build();
+
+                // Effectuer la demande avec OkHttp
+                OkHttpClient client = new OkHttpClient();
+                Request request = new Request.Builder()
+                        .url(backendUrl)
+                        .post(requestBody)
+                        .build();
+
+                Response response = client.newCall(request).execute();
+
+                if (response.isSuccessful()) {
+                    // La demande a réussi
+                    return "Image uploaded successfully to the backend";
+                } else {
+                    // La demande a échoué
+                    return "Failed to upload image to the backend. Response code: " + response.code();
+                }
+            } catch (Exception e) {
+                // Gérer les erreurs
+                e.printStackTrace();
+                return "Failed to communicate with the backend: " + e.getMessage();
+            }
         }
 
-        // Save the image with a timestamp in the filename
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String filename = "IMG_" + timestamp + ".jpg";
-        File imageFile = new File(storageDir, filename);
-        Imgcodecs.imwrite(imageFile.getAbsolutePath(), image);
+        @Override
+        protected void onPostExecute(String result) {
+            showToast(result);
+        }
+    }
+
+    private byte[] convertMatToByteArray(Mat mat) {
+        // Convertir la matrice OpenCV en un tableau de bytes
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        Bitmap bitmap = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
+        org.opencv.android.Utils.matToBitmap(mat, bitmap);
+
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+
+        return byteArrayOutputStream.toByteArray();
     }
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 }
-
-
-
