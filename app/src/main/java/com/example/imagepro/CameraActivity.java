@@ -8,10 +8,13 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
@@ -19,12 +22,7 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -44,6 +42,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     private BaseLoaderCallback mLoaderCallback;
     private Handler captureHandler;
     private Runnable captureRunnable;
+    private TextView statusTextView; // Ajout du TextView
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +76,9 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                 captureImage();
             }
         };
+
+        // Initialiser le TextView
+        statusTextView = findViewById(R.id.statusTextView);
     }
 
     @Override
@@ -173,18 +175,22 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                         .addFormDataPart("image", "image.jpg", RequestBody.create(MediaType.parse("image/*"), imageBytes[0]))
                         .build();
 
-                // Effectuer la demande avec OkHttp
-                OkHttpClient client = new OkHttpClient();
+                // Créer l'objet Request
                 Request request = new Request.Builder()
                         .url(backendUrl)
                         .post(requestBody)
                         .build();
 
+                // Créer l'objet OkHttpClient
+                OkHttpClient client = new OkHttpClient();
+
+                // Effectuer la demande avec OkHttp
                 Response response = client.newCall(request).execute();
 
                 if (response.isSuccessful()) {
                     // La demande a réussi
-                    return "Image uploaded successfully to the backend";
+                    String responseBody = response.body().string();
+                    return responseBody;
                 } else {
                     // La demande a échoué
                     return "Failed to upload image to the backend. Response code: " + response.code();
@@ -199,6 +205,19 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         @Override
         protected void onPostExecute(String result) {
             showToast(result);
+            // Mettre à jour le TextView avec le résultat
+            try {
+                // Parse le JSON de la réponse
+                JSONObject jsonObject = new JSONObject(result);
+                String message = jsonObject.getString("message");
+
+                // Affiche le message dans le Toast et le TextView
+                showToast(message);
+                statusTextView.setText(message);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                statusTextView.setText("Error parsing server response");
+            }
         }
     }
 
