@@ -13,6 +13,8 @@ import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 
+import com.example.imagepro.R;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opencv.android.BaseLoaderCallback;
@@ -42,7 +44,10 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     private BaseLoaderCallback mLoaderCallback;
     private Handler captureHandler;
     private Runnable captureRunnable;
-    private TextView statusTextView; // Ajout du TextView
+    private TextView statusTextView;
+    private TextView descriptionTextView;
+    private TextView typeTextView;
+    private TextView histoireTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,8 +82,10 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
             }
         };
 
-        // Initialiser le TextView
         statusTextView = findViewById(R.id.statusTextView);
+        descriptionTextView = findViewById(R.id.descriptionTextView);
+        typeTextView = findViewById(R.id.typeTextView);
+        histoireTextView = findViewById(R.id.histoireTextView);
     }
 
     @Override
@@ -110,7 +117,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0, this, mLoaderCallback);
         }
 
-        // Attendre 5 secondes avant de capturer l'image
+        // Wait for 5 seconds before capturing the image
         captureHandler.postDelayed(captureRunnable, CAPTURE_DELAY_MS);
     }
 
@@ -120,7 +127,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         if (mOpenCvCameraView != null) {
             mOpenCvCameraView.disableView();
         }
-        // Arrêter la capture programmée lors de la mise en pause de l'activité
+        // Stop the scheduled capture when the activity is paused
         captureHandler.removeCallbacks(captureRunnable);
     }
 
@@ -155,10 +162,10 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     private void captureImage() {
         showToast("Image captured!");
 
-        // Convertir la matrice OpenCV en un tableau de bytes
+        // Convert the OpenCV matrix to a byte array
         byte[] imageData = convertMatToByteArray(mRgba);
 
-        // Envoi de l'image au backend Flask
+        // Send the image to the Flask backend
         new UploadImageTask().execute(imageData);
     }
 
@@ -166,37 +173,37 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         @Override
         protected String doInBackground(byte[]... imageBytes) {
             try {
-                // URL du backend Flask
+                // URL of the Flask backend
                 String backendUrl = "http://192.168.43.112:5000/upload";
 
-                // Créer la demande multipart avec l'image
+                // Create the multipart request with the image
                 RequestBody requestBody = new MultipartBody.Builder()
                         .setType(MultipartBody.FORM)
                         .addFormDataPart("image", "image.jpg", RequestBody.create(MediaType.parse("image/*"), imageBytes[0]))
                         .build();
 
-                // Créer l'objet Request
+                // Create the Request object
                 Request request = new Request.Builder()
                         .url(backendUrl)
                         .post(requestBody)
                         .build();
 
-                // Créer l'objet OkHttpClient
+                // Create the OkHttpClient object
                 OkHttpClient client = new OkHttpClient();
 
-                // Effectuer la demande avec OkHttp
+                // Perform the request with OkHttp
                 Response response = client.newCall(request).execute();
 
                 if (response.isSuccessful()) {
-                    // La demande a réussi
+                    // The request was successful
                     String responseBody = response.body().string();
                     return responseBody;
                 } else {
-                    // La demande a échoué
-                    return "Failed to upload image to the backend. Response code: " + response.code();
+                    // The request failed
+                    return "Failed to upload image to the backend. Response code: " + response.message();
                 }
             } catch (Exception e) {
-                // Gérer les erreurs
+                // Handle errors
                 e.printStackTrace();
                 return "Failed to communicate with the backend: " + e.getMessage();
             }
@@ -205,24 +212,44 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         @Override
         protected void onPostExecute(String result) {
             showToast(result);
-            // Mettre à jour le TextView avec le résultat
+            // Update the TextView with the result
             try {
-                // Parse le JSON de la réponse
                 JSONObject jsonObject = new JSONObject(result);
-                String message = jsonObject.getString("message");
+                String status = jsonObject.getString("status");
 
-                // Affiche le message dans le Toast et le TextView
-                showToast(message);
-                statusTextView.setText(message);
+                if ("success".equals(status)) {
+                    JSONObject gpt4Result = jsonObject.getJSONObject("gpt4_result");
+                    String description = gpt4Result.getString("un_tres_petit_descriptif");
+                    String typeBabouche = gpt4Result.getString("type");
+                    String histoire = gpt4Result.getString("histoire");
+
+                    updateUI(description, typeBabouche, histoire);
+                } else {
+                    String message = jsonObject.getString("message");
+                    showToast("Échec du téléchargement de l'image : " + message);
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
-                statusTextView.setText("Error parsing server response");
+                showToast("Erreur lors de l'analyse de la réponse du serveur");
             }
+        }
+
+        private void updateUI(String description, String typeBabouche, String histoire) {
+            // Mise à jour des TextView avec les informations reçues
+
+
+            // Supprimer les accolades et backticks du JSON
+            String cleanDescription = description.replace("{", "").replace("}", "").replace("`", "").replace("json","");
+            String cleanType = typeBabouche.replace("{", "").replace("}", "").replace("`", "").replace("json","");
+            String cleanHistoire = histoire.replace("{", "").replace("}", "").replace("`", "").replace("json","");
+
+            // Afficher les résultats propres
+            statusTextView.setText("Description: " + cleanDescription + "\nType: " + cleanType + "\nHistoire: " + cleanHistoire);
         }
     }
 
     private byte[] convertMatToByteArray(Mat mat) {
-        // Convertir la matrice OpenCV en un tableau de bytes
+        // Convert the OpenCV matrix to a byte array
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
         Bitmap bitmap = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
