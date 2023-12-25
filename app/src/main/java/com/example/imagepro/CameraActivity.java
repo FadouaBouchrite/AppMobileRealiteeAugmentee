@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +26,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 import java.io.ByteArrayOutputStream;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -36,18 +38,18 @@ import okhttp3.Response;
 public class CameraActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
     private static final String TAG = "CameraActivity";
     private static final int PERMISSION_REQUEST_CODE = 1;
-    private static final long CAPTURE_DELAY_MS = 5000;
+    private static final long DOUBLE_CLICK_TIME_DELTA = 300; // Milliseconds
 
     private Mat mRgba;
     private Mat mGray;
     private CameraBridgeViewBase mOpenCvCameraView;
     private BaseLoaderCallback mLoaderCallback;
     private Handler captureHandler;
-    private Runnable captureRunnable;
     private TextView statusTextView;
-    private TextView descriptionTextView;
-    private TextView typeTextView;
-    private TextView histoireTextView;
+
+
+    private int clickCount = 0;
+    private long lastClickTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,17 +77,11 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         };
 
         captureHandler = new Handler();
-        captureRunnable = new Runnable() {
-            @Override
-            public void run() {
-                captureImage();
-            }
-        };
 
         statusTextView = findViewById(R.id.statusTextView);
-        descriptionTextView = findViewById(R.id.descriptionTextView);
-        typeTextView = findViewById(R.id.typeTextView);
-        histoireTextView = findViewById(R.id.histoireTextView);
+
+
+        initializeCamera();
     }
 
     @Override
@@ -104,11 +100,20 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
         mOpenCvCameraView.setCameraPermissionGranted();
         mOpenCvCameraView.setCvCameraViewListener(this);
+
+        mOpenCvCameraView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                handleClick();
+            }
+        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        clickCount = 0;
+
         if (OpenCVLoader.initDebug()) {
             Log.d(TAG, "OpenCV initialization is done");
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
@@ -116,9 +121,6 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
             Log.d(TAG, "OpenCV is not loaded. Try again");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0, this, mLoaderCallback);
         }
-
-        // Wait for 5 seconds before capturing the image
-        captureHandler.postDelayed(captureRunnable, CAPTURE_DELAY_MS);
     }
 
     @Override
@@ -128,7 +130,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
             mOpenCvCameraView.disableView();
         }
         // Stop the scheduled capture when the activity is paused
-        captureHandler.removeCallbacks(captureRunnable);
+        captureHandler.removeCallbacksAndMessages(null);
     }
 
     @Override
@@ -159,6 +161,25 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         return mRgba;
     }
 
+    private void handleClick() {
+        long clickTime = System.currentTimeMillis();
+        if (clickTime - lastClickTime < DOUBLE_CLICK_TIME_DELTA) {
+            // Double click detected
+            captureImage();
+        } else {
+            // Single click, reset the counter
+            clickCount = 1;
+        }
+
+        lastClickTime = clickTime;
+
+        // Si c'est un double-clic, lancer la capture après chaque double-clic
+        if (clickCount == 2) {
+            captureImage();
+            clickCount = 0; // Réinitialiser le compteur après la capture
+        }
+    }
+
     private void captureImage() {
         showToast("Image captured!");
 
@@ -171,7 +192,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
     private class UploadImageTask extends AsyncTask<byte[], Void, String> {
         @Override
-        protected String doInBackground(byte[]... imageBytes) {
+        protected String doInBackground(byte[]... bytes) {
             try {
                 // URL of the Flask backend
                 String backendUrl = "http://192.168.43.112:5000/upload";
@@ -179,7 +200,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                 // Create the multipart request with the image
                 RequestBody requestBody = new MultipartBody.Builder()
                         .setType(MultipartBody.FORM)
-                        .addFormDataPart("image", "image.jpg", RequestBody.create(MediaType.parse("image/*"), imageBytes[0]))
+                        .addFormDataPart("image", "image.jpg", RequestBody.create(MediaType.parse("image/*"), bytes[0]))
                         .build();
 
                 // Create the Request object
@@ -189,7 +210,15 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                         .build();
 
                 // Create the OkHttpClient object
-                OkHttpClient client = new OkHttpClient();
+
+
+
+                OkHttpClient client = new OkHttpClient.Builder()
+                        .connectTimeout(60, TimeUnit.SECONDS)
+                        .readTimeout(60, TimeUnit.SECONDS)
+                        .writeTimeout(60, TimeUnit.SECONDS)
+                        .build();
+
 
                 // Perform the request with OkHttp
                 Response response = client.newCall(request).execute();
@@ -200,7 +229,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                     return responseBody;
                 } else {
                     // The request failed
-                    return "Failed to upload image to the backend. Response code: " + response.message();
+                    return "Failed to upload image to the backend. Response code: " + response.code();
                 }
             } catch (Exception e) {
                 // Handle errors
@@ -211,7 +240,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
         @Override
         protected void onPostExecute(String result) {
-            showToast(result);
+
             // Update the TextView with the result
             try {
                 JSONObject jsonObject = new JSONObject(result);
@@ -220,10 +249,8 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                 if ("success".equals(status)) {
                     JSONObject gpt4Result = jsonObject.getJSONObject("gpt4_result");
                     String description = gpt4Result.getString("un_tres_petit_descriptif");
-                    String typeBabouche = gpt4Result.getString("type");
-                    String histoire = gpt4Result.getString("histoire");
 
-                    updateUI(description, typeBabouche, histoire);
+                    updateUI(description);
                 } else {
                     String message = jsonObject.getString("message");
                     showToast("Échec du téléchargement de l'image : " + message);
@@ -234,17 +261,30 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
             }
         }
 
-        private void updateUI(String description, String typeBabouche, String histoire) {
+        private void updateUI(String description) {
             // Mise à jour des TextView avec les informations reçues
-
-
             // Supprimer les accolades et backticks du JSON
-            String cleanDescription = description.replace("{", "").replace("}", "").replace("`", "").replace("json","");
-            String cleanType = typeBabouche.replace("{", "").replace("}", "").replace("`", "").replace("json","");
-            String cleanHistoire = histoire.replace("{", "").replace("}", "").replace("`", "").replace("json","");
+            try {
+                JSONObject jsonObject = new JSONObject(description);
 
-            // Afficher les résultats propres
-            statusTextView.setText("Description: " + cleanDescription + "\nType: " + cleanType + "\nHistoire: " + cleanHistoire);
+                // Extract values from JSON
+                String unTresPetitDescriptif = jsonObject.getString("un_tres_petit_descriptif");
+                String type = jsonObject.getString("type");
+                String histoire = jsonObject.getString("histoire");
+
+                // Display extracted values in TextView
+                statusTextView.setText("Un Tres Petit Descriptif test: " + unTresPetitDescriptif + "\n"
+                        + "Type: " + type + "\n"
+                        + "Histoire: " + histoire);
+
+                // You can also assign these values to variables if needed for further use
+                // For example:
+                // String myVariable = unTresPetitDescriptif;
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+                showToast("Erreur lors de l'analyse de la réponse du serveur");
+            }
         }
     }
 
