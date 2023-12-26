@@ -4,34 +4,33 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import org.opencv.android.OpenCVLoader;
-
+import com.example.imagepro.R;
+import com.example.imagepro.register;
 
 public class MainActivity extends AppCompatActivity {
-    static {    if(OpenCVLoader.initDebug()){
-        Log.d("MainActivity: ","Opencv is loaded");
-    }
-    else {
-        Log.d("MainActivity: ","Opencv failed to load");
-    }
-    }
-
-    private Button camera_button;
-
+    Button Login,Register;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        camera_button=findViewById(R.id.camera_button);
-        camera_button.setOnClickListener(new View.OnClickListener() {
+        Login=findViewById(R.id.Login);
+        Register=findViewById(R.id.Register);
+        Login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this,CameraActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                Intent intent=new Intent(MainActivity.this, LoginActivity.class);
+                startActivity(intent);
+            }
+        });
+        Register.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(MainActivity.this, register.class);
+                startActivity(intent);
             }
         });
 

@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">ImagePro</string>
+    <string name="app_name">fadousaje</string>
+
+    <string name="moroccan_babouch_paragraph">
+Bienvenue dans le monde captivant de Babouche wisdom, une application révolutionnaire de reconnaissance d\'objets conçue pour vous plonger au cœur de l\'univers des babouches. En utilisant la puissance de la technologie de traitement d\'image avancée, Babouche wisdom offre une expérience immersive permettant la détection des babouches. Découvrez instantanément des informations détaillées, des descriptions vivantes, et explorez l\'histoire et les styles uniques de ces chaussures emblématiques. Lorsque vous appuyez sur "Try our app", soyez prêt à effectuer un double clic lorsque la caméra est focalisée sur l\'objet pour déclencher la détection. Simple, intuitif et instructif, Babouche wisdom vous ouvre la porte à un voyage passionnant à travers l\'art, la culture et le patrimoine liés aux babouches. Préparez-vous à explorer le monde des babouches comme jamais auparavant.    </string>
+
 </resources>

@@ -1,16 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    android:gravity="center">
+    android:background="@drawable/background"
+    tools:context=".MainActivity">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="50dp"
-        android:id="@+id/camera_button"
-        android:text="Object"
-        />
-</LinearLayout>
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="250dp"
+        android:layout_height="248dp"
+        android:background="@drawable/logo"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.384"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.091" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/Login"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="140dp"
+        android:layout_height="65dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginBottom="88dp"
+        android:backgroundTint="@color/dorenoir"
+        android:text="Login"
+        android:textColor="@color/dore"
+        app:cornerRadius="27dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:strokeColor="@color/dore" />
+
+    <TextView
+        android:id="@+id/titre"
+        android:layout_width="330dp"
+        android:layout_height="90dp"
+        android:fontFamily="cursive"
+        android:letterSpacing="0.1"
+        android:text="Welcome to BABOUCHE"
+        android:textColor="@color/white"
+        android:textSize="29dp"
+        android:textStyle="bold"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.604"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.393" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/Register"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="140dp"
+        android:layout_height="65dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginBottom="88dp"
+        android:backgroundTint="@color/dorenoir"
+        android:text="Sign up"
+        android:textColor="@color/dore"
+        app:cornerRadius="27dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/Login"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:strokeColor="@color/dore"
+        tools:ignore="MissingConstraints" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

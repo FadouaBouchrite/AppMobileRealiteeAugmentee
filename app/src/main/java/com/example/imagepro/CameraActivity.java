@@ -257,7 +257,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
-                showToast("Erreur lors de l'analyse de la réponse du serveur");
+                showToast("Erreur lors de l'analyse de la réponse du serveur"+e.getMessage());
             }
         }
 
@@ -273,7 +273,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                 String histoire = jsonObject.getString("histoire");
 
                 // Display extracted values in TextView
-                statusTextView.setText("Un Tres Petit Descriptif test: " + unTresPetitDescriptif + "\n"
+                statusTextView.setText("Un Tres Petit Descriptif : " + unTresPetitDescriptif + "\n"
                         + "Type: " + type + "\n"
                         + "Histoire: " + histoire);
 
@@ -282,9 +282,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                 // String myVariable = unTresPetitDescriptif;
 
             } catch (JSONException e) {
-                e.printStackTrace();
-                showToast("Erreur lors de l'analyse de la réponse du serveur");
-            }
+           }
         }
     }
 
