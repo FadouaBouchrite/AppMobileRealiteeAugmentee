@@ -13,6 +13,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.imagepro.R;
 
@@ -26,6 +27,8 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.MediaType;
@@ -35,11 +38,11 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class CameraActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
+public class CameraActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2, RetrieveImagesAsyncTask.OnImagesRetrievedListener {
     private static final String TAG = "CameraActivity";
     private static final int PERMISSION_REQUEST_CODE = 1;
     private static final long DOUBLE_CLICK_TIME_DELTA = 300; // Milliseconds
-
+    private String type=null;
     private Mat mRgba;
     private Mat mGray;
     private CameraBridgeViewBase mOpenCvCameraView;
@@ -83,12 +86,12 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
         initializeCamera();
     }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 initializeCamera();
+
             } else {
                 showToast("Camera permission denied");
             }
@@ -100,6 +103,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
         mOpenCvCameraView.setCameraPermissionGranted();
         mOpenCvCameraView.setCvCameraViewListener(this);
+
 
         mOpenCvCameraView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -145,6 +149,9 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat(height, width, CvType.CV_8UC4);
         mGray = new Mat(height, width, CvType.CV_8UC1);
+
+
+
     }
 
     @Override
@@ -190,7 +197,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         new UploadImageTask().execute(imageData);
     }
 
-    private class UploadImageTask extends AsyncTask<byte[], Void, String> {
+    private class UploadImageTask extends AsyncTask<byte[], Void, String> implements RetrieveImagesAsyncTask.OnImagesRetrievedListener {
         @Override
         protected String doInBackground(byte[]... bytes) {
             try {
@@ -227,6 +234,8 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
                     // The request was successful
                     String responseBody = response.body().string();
                     return responseBody;
+
+
                 } else {
                     // The request failed
                     return "Failed to upload image to the backend. Response code: " + response.code();
@@ -266,23 +275,47 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
             // Supprimer les accolades et backticks du JSON
             try {
                 JSONObject jsonObject = new JSONObject(description);
-
+Log.d("Json",jsonObject+"");
                 // Extract values from JSON
                 String unTresPetitDescriptif = jsonObject.getString("un_tres_petit_descriptif");
-                String type = jsonObject.getString("type");
+                 String type = jsonObject.getString("type");
                 String histoire = jsonObject.getString("histoire");
 
                 // Display extracted values in TextView
                 statusTextView.setText("Un Tres Petit Descriptif : " + unTresPetitDescriptif + "\n"
                         + "Type: " + type + "\n"
                         + "Histoire: " + histoire);
+                showToast("succes");
 
-                // You can also assign these values to variables if needed for further use
-                // For example:
-                // String myVariable = unTresPetitDescriptif;
+
+                AppDatabase database = DatabaseInitializer.getInstance(getApplicationContext());
+                ImageDao imageDao = database.imageDao();
+                // Create a list of images
+                List<ImageEntity> list = new ArrayList<>();
+                ImageEntity image1 = new ImageEntity("file:///android_asset/images/i4-removebg-preview.png", "Rafia");
+                ImageEntity image2 = new ImageEntity("file:///android_asset/images/i6-removebg-preview.png", "Chelhaouia");
+                list.add(image1);
+                list.add(image2);
+                showToast(type);
+                // Insert images into the database asynchronously
+                new InsertImagesAsyncTask(imageDao).execute(list);
+
+                // Retrieve images by type asynchronously
+                new RetrieveImagesAsyncTask(imageDao, this).execute(type);
+
+
+
+
 
             } catch (JSONException e) {
+
+                showToast(e.getMessage());
            }
+        }
+
+        @Override
+        public void onImagesRetrieved(List<ImageEntity> images) {
+
         }
     }
 
@@ -300,5 +333,14 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+
+    @Override
+    public void onImagesRetrieved(List<ImageEntity> images) {
+        // Handle the retrieved images here
+        ViewPager2 viewPager = findViewById(R.id.viewPager);
+        ImagePagerAdapter adapter = new ImagePagerAdapter(images);
+        viewPager.setAdapter(adapter);
     }
 }

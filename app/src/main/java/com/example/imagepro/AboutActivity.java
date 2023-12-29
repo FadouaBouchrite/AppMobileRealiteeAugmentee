@@ -14,12 +14,20 @@ public class AboutActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
         Button button =findViewById(R.id.button);
+        Button button1=findViewById(R.id.buttonabout);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent=new Intent(getApplicationContext(),CameraActivity.class);
                         startActivity(intent);
 
+            }
+        });
+        button1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent2=new Intent(getApplicationContext(),CatalogueActivity.class);
+                startActivity(intent2);
             }
         });
     }
