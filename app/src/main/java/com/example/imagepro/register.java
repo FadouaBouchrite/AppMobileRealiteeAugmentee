@@ -63,8 +63,10 @@ public class register extends AppCompatActivity {
 
     private boolean registerUser(String email, String password) {
         DatabaseHelper db=new DatabaseHelper(this);
-        db.insertUser(email,password);
+        DatabaseHelper databaseHelper=new DatabaseHelper(this);
+        databaseHelper.insertUser(email,password);
         return true;
+
     }
 
 }

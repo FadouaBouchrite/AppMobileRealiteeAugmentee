@@ -15,8 +15,6 @@ import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.example.imagepro.R;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opencv.android.BaseLoaderCallback;
@@ -27,7 +25,6 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -152,6 +149,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
 
 
 
+
     }
 
     @Override
@@ -166,6 +164,8 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         mGray = inputFrame.gray();
 
         return mRgba;
+
+
     }
 
     private void handleClick() {
@@ -176,6 +176,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         } else {
             // Single click, reset the counter
             clickCount = 1;
+
         }
 
         lastClickTime = clickTime;
@@ -202,7 +203,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         protected String doInBackground(byte[]... bytes) {
             try {
                 // URL of the Flask backend
-                String backendUrl = "http://192.168.43.112:5000/upload";
+                String backendUrl = "http://100.70.35.173:5000/upload";
 
                 // Create the multipart request with the image
                 RequestBody requestBody = new MultipartBody.Builder()
@@ -285,32 +286,29 @@ Log.d("Json",jsonObject+"");
                 statusTextView.setText("Un Tres Petit Descriptif : " + unTresPetitDescriptif + "\n"
                         + "Type: " + type + "\n"
                         + "Histoire: " + histoire);
-                showToast("succes");
-
 
                 AppDatabase database = DatabaseInitializer.getInstance(getApplicationContext());
                 ImageDao imageDao = database.imageDao();
                 // Create a list of images
-                List<ImageEntity> list = new ArrayList<>();
-                ImageEntity image1 = new ImageEntity("file:///android_asset/images/i4-removebg-preview.png", "Rafia");
-                ImageEntity image2 = new ImageEntity("file:///android_asset/images/i6-removebg-preview.png", "Chelhaouia");
-                list.add(image1);
-                list.add(image2);
+             //   List<ImageEntity> list = new ArrayList<>();
+                //ImageEntity image1 = new ImageEntity("file:///android_asset/images/i4-removebg-preview.png", "Rafia");
+                //  ImageEntity image2 = new ImageEntity("file:///android_asset/images/i6-removebg-preview.png", "Chelhaouia");
+                // list.add(image1);
+                //list.add(image2);
                 showToast(type);
+
                 // Insert images into the database asynchronously
-                new InsertImagesAsyncTask(imageDao).execute(list);
-
+                //new InsertImagesAsyncTask(imageDao).execute(list);
                 // Retrieve images by type asynchronously
-                new RetrieveImagesAsyncTask(imageDao, this).execute(type);
+                new RetrieveImagesAsyncTask(imageDao, this).execute("Rafia");
 
-
+                showToast("succes");
 
 
 
             } catch (JSONException e) {
-
                 showToast(e.getMessage());
-           }
+            }
         }
 
         @Override
@@ -342,5 +340,6 @@ Log.d("Json",jsonObject+"");
         ViewPager2 viewPager = findViewById(R.id.viewPager);
         ImagePagerAdapter adapter = new ImagePagerAdapter(images);
         viewPager.setAdapter(adapter);
+
     }
 }
