@@ -36,7 +36,6 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@drawable/back5"
             android:orientation="vertical">
 
             <Space
@@ -45,19 +44,15 @@
 
             <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="256dp">
+                android:layout_height="wrap_content"
+                android:padding="16dp">
 
                 <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:paddingLeft="16dp"
-                    android:paddingTop="0dp"
-                    android:paddingRight="16dp"
-                    android:paddingBottom="0dp"
-                    android:text="@string/moroccan_babouch_paragraph"
-                    android:textColor="#fff"
-                    android:textSize="18sp" />
-
+                    android:layout_height="wrap_content"
+                    android:text="VR Molecular Explorer est une application de réalité virtuelle conçue pour révolutionner l'apprentissage des sciences. Elle permet aux étudiants de visualiser et d'interagir avec des modèles moléculaires en trois dimensions, facilitant ainsi la compréhension des structures et interactions complexes. Grâce à la technologie de suivi des mains, les utilisateurs peuvent manipuler, zoomer et explorer les molécules de manière intuitive et immersive, rendant l'étude de la chimie et de la biologie plus engageante et accessible."
+                android:textSize="16sp"
+                android:textColor="@color/white" />
             </ScrollView>
 
             <Space
@@ -68,7 +63,9 @@
                 android:layout_height="match_parent"
                 android:orientation="horizontal">
 
+
                 <com.google.android.material.button.MaterialButton
+                    android:visibility="invisible"
                     android:id="@+id/buttonabout"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="158dp"
@@ -85,30 +82,32 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintVertical_bias="0.66"
-                    app:strokeColor="@color/dore" />
+                    app:strokeColor="@color/dore"
+
+                    />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="158dp"
-                    android:layout_height="wrap_content"
-                    android:backgroundTint="@color/dorenoir"
-                    android:text="essayer"
-                    android:textColor="@color/dore"
+                    android:layout_width="163dp"
+                    android:layout_height="57dp"
+                    android:layout_marginStart="100dp"
+                    android:layout_marginEnd="32dp"
+                    android:backgroundTint="#21464A"
+                    android:text="essayer l'application "
+                    android:textColor="@color/black"
                     app:cornerRadius="20dp"
-                    android:layout_marginStart="10dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintHorizontal_bias="0.402"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintVertical_bias="0.66"
-                    android:layout_marginEnd="10dp"
-                    app:strokeColor="@color/dore" />
+                    app:strokeColor="@color/black"/>
             </LinearLayout>
 
-        </LinearLayout>
 
+        </LinearLayout>
 
     </androidx.cardview.widget.CardView>
 
