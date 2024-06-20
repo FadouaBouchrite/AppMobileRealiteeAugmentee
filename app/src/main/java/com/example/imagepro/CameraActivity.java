@@ -203,7 +203,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         protected String doInBackground(byte[]... bytes) {
             try {
                 // URL of the Flask backend
-                String backendUrl = "http://192.168.8.120:5000/upload";
+                String backendUrl = "BACKEND_FLASK_URL_FROM_ANDROID";
 
                 // Create the multipart request with the image
                 RequestBody requestBody = new MultipartBody.Builder()
